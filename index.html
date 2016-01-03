@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>javascript async/await patterns</title>
+
+        <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+        <meta name="author" content="Hakim El Hattab">
+
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+        <link rel="stylesheet" href="css/reveal.css">
+        <link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+        <!-- Code syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/zenburn.css">
+
+        <link rel="stylesheet" href="css/custom.css">
+
+        <!-- Printing and PDF exports -->
+        <script>
+            var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+            document.getElementsByTagName( 'head' )[0].appendChild( link );
+        </script>
+
+        <!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <div class="reveal">
+
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+                <section>
+                    <h2>Javascript async/await patterns</h2>
+                    <p>
+                        <small>by Chris Hiestand <a href="http://twitter.com/dimmer">@dimmer</a></small>
+                    </p>
+                </section>
+
+                <section class="antiexample">
+                    <h3>Unhandled Rejection Anti-Example</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+import _Fetch from 'isomorphic-fetch';
+
+// We intentionally are *not* running an http server on port 1337
+function fetch_P() {
+    return _Fetch('http://localhost:1337/servernotrunning.json')
+    .then((result) => {
+        return result.json();
+    });
+}
+
+async function main() {
+    let data = await fetch_P();
+    console.log('got data');
+}
+
+// This will fail silently
+main();
+</code></pre>
+                </section>
+                <section>
+                    <h3>Unhandled Rejection Workaround</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+import _Fetch from 'isomorphic-fetch';
+
+// workaround for hidden promise rejections, see:
+// &lt;https://github.com/nodejs/node/issues/830&gt;
+process.on('unhandledRejection', err => { throw err; });
+
+// We intentionally are *not* running an http server on port 1337
+function fetch_P() {
+    return _Fetch('http://localhost:1337/servernotrunning.json')
+    .then((result) => {
+        return result.json();
+    });
+}
+
+async function main() {
+    let data = await fetch_P();
+    console.log('got data');
+}
+
+// This will fail but will at least an error will be thrown
+main();
+</code></pre>
+                </section>
+
+                <section>
+                    <h3>Async with Promises</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+function main() {
+
+    // Initializing an empty variable to ensure
+    // lexical/thenable scope always felt awkward
+    let data;
+
+    // fetch_P() is called first
+    fetch_P()
+    .then((result) => {
+
+        // This happens third
+        data = result;
+        console.log('got data');
+    });
+
+    // This happens second
+    console.log("shouldn't I have the data here?
+    I mean, this code *is* further down the screen.");
+}
+</code></pre></section>
+
+                <section>
+                    <h3>Async with async/await</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+async function main() {
+
+    // This happens first
+    let data = await fetch_P();
+
+    // This happens second
+    console.log('got data');
+
+    // This happens third
+    console.log('sanity restored');
+}
+</code></pre></section>
+
+                <section class="antiexample">
+                    <h3>Blocking promise anti-example</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+// fetch_P returns a promise
+async function fetch_P(auth, key) {
+
+    // anti-pattern: this causes this library
+    // function to block execution, try to avoid this
+    let config = await getConfig_P(auth);
+
+    return getValue_P(config, key);
+}
+
+async function main(auth) {
+    let value1 = fetch_P(auth, 'key1');
+    let value2 = fetch_P(auth, 'key2');
+    let value3 = fetch_P(auth, 'key3');
+}
+
+</code></pre></section>
+
+                <section>
+                    <h3>Non-blocking promise example</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+function fetch_P(config, key) {
+
+    // This just returns a promise and does not block
+    return getValue_P(config, key);
+}
+
+async function main(auth) {
+
+    let config = await getConfig_P(auth);
+
+    // These promises execute in parallel
+    let p1 = fetch_P(config, 'key1');
+    let p2 = fetch_P(config, 'key2');
+    let p3 = fetch_P(config, 'key3');
+
+    // This blocks until all 3 parallel promises are settled
+    let [value1, value2, value3] = await Promise.all([p1, p2, p3]);
+}
+
+</code></pre></section>
+
+                <section>
+                    <h3>Javascript can sleep</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+import Assert from 'assert';
+import _Promise from 'bluebird';
+
+async function test() {
+
+    decoupledRemoteThing();
+
+    // decoupledRemoteThing should be complete after 1 second
+    // Akin to `sleep(1000)` in synchronous languages
+    await _Promise.delay(1000);
+
+    // This runs at least 1 second after
+    // decoupledRemoteThing() was executed
+    let remoteValue = await getRemoteValue_P();
+    Assert(remoteValue === true);
+}
+</code></pre></section>
+
+                <section>
+                    <h3>Background async requests and defer blocking</h3>
+<pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
+async function main() {
+
+    let inputQueue = await getIntputQueue_P();
+
+    // Start this operation now, but we will use
+    // the result later; note the lack of `await`
+    let outputQueueDefer = getOutputQueue_P();
+
+    // This may take some time
+    let workDone = await doWork_P(inputQueue);
+
+    // By the time doWork_P() is done, this promise
+    // is probably already resolved
+    let outputQueue = await outputQueueDefer;
+
+    await putResult_P(outputQueue, workDone);
+}
+</code></pre></section>
+
+
+            </div>
+
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.js"></script>
+
+        <script>
+
+            // Full list of configuration options available at:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+                // Factor of the display size that should remain empty around the content
+                margin: 0.1,
+
+                // Optional reveal.js plugins
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true },
+                    { src: 'plugin/notes/notes.js', async: true }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>
