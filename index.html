@@ -226,6 +226,18 @@ async function main() {
 }
 </code></pre></section>
 
+                <section>
+                    <h3>Summary</h3>
+                    <ul>
+                        <li>Return promises everywhere you do asynchronous calls</li>
+                        <li>Use <code>await</code> where you must block, and no more</li>
+                        <li>When performance matters, start the promise but defer the <code>await</code> until other work is done to save time.</li>
+                        <li>This line brings order from chaos:
+                            <pre><code data-trim class="js" contenteditable>let [value1, value2, value3] = await Promise.all([p1, p2, p3])</code></pre>
+                        </li>
+                    </ul>
+                </section>
+
 
             </div>
 
