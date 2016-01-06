@@ -53,13 +53,16 @@ import _Fetch from 'isomorphic-fetch';
 
 // We intentionally are *not* running an http server on port 1337
 function fetch_P() {
+
     return _Fetch('http://localhost:1337/servernotrunning.json')
     .then((result) => {
+
         return result.json();
     });
 }
 
 async function main() {
+
     let data = await fetch_P();
     console.log('got data');
 }
@@ -79,13 +82,16 @@ process.on('unhandledRejection', err => { throw err; });
 
 // We intentionally are *not* running an http server on port 1337
 function fetch_P() {
+
     return _Fetch('http://localhost:1337/servernotrunning.json')
     .then((result) => {
+
         return result.json();
     });
 }
 
 async function main() {
+
     let data = await fetch_P();
     console.log('got data');
 }
@@ -233,6 +239,7 @@ async function main() {
                             <pre><code data-trim class="js" contenteditable>let [value1, value2, value3] = await Promise.all([p1, p2, p3])</code></pre>
                         </li>
                     </ul>
+                    <p>Blog post at: <a href="http://goo.gl/rG2Tb5">http://goo.gl/rG2Tb5</a></p>
                 </section>
 
 
