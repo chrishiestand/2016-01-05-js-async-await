@@ -174,32 +174,32 @@ async function main() {
 </code></pre></section>
 
                 <section class="antiexample">
-                    <h3>Blocking promise anti-example</h3>
+                    <h3>Inefficient promise anti-example</h3>
 <pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
 // fetch_P returns a promise
 async function fetch_P(auth, key) {
 
-    // anti-pattern: this causes this library
-    // function to block execution, try to avoid this
+    // anti-pattern: an unnecessary additional
+    // remote call in a function
     let config = await getConfig_P(auth);
 
     return getValue_P(config, key);
 }
 
 async function main(auth) {
-    let value1 = fetch_P(auth, 'key1');
-    let value2 = fetch_P(auth, 'key2');
-    let value3 = fetch_P(auth, 'key3');
+    let value1 = fetch_P(auth, 'key1'); // gets config
+    let value2 = fetch_P(auth, 'key2'); // gets config too
+    let value3 = fetch_P(auth, 'key3'); // gets config three
 }
 
 </code></pre></section>
 
                 <section>
-                    <h3>Non-blocking promise example</h3>
+                    <h3>minimum promises per function example</h3>
 <pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
 function fetch_P(config, key) {
 
-    // This just returns a promise and does not block
+    // Performs a single remote operation
     return getValue_P(config, key);
 }
 
@@ -212,7 +212,9 @@ async function main(auth) {
     let p2 = fetch_P(config, 'key2');
     let p3 = fetch_P(config, 'key3');
 
-    // This blocks until all 3 parallel promises are settled
+    // This only executes after all 3
+    // parallel promises are settled
+    // assignment is stable: order is retained
     let [value1, value2, value3] = await Promise.all([p1, p2, p3]);
 }
 
@@ -240,7 +242,7 @@ async function test() {
 </code></pre></section>
 
                 <section>
-                    <h3>Background async requests and defer blocking</h3>
+                    <h3>Background async requests and defer waiting</h3>
 <pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
 async function main() {
 
@@ -264,12 +266,14 @@ async function main() {
                 <section>
                     <h3>Summary</h3>
                     <ul>
-                        <li>Return promises everywhere you do asynchronous calls</li>
-                        <li>Use <code>await</code> where you must block, and no more</li>
-                        <li>When performance matters, start the promise but defer the <code>await</code> until other work is done to save time.</li>
+                        <li>Return promises (or use async functions) everywhere you do asynchronous calls</li>
+                        <li>Don't forget <code>process.on('unhandledRejection', ...)</code></li>
+                        <li>Minimize the number of remote calls per function.</li>
+                        <li>For performance, start a promise but defer the <code>await</code> until other work is done.</li>
                         <li>This line brings order from chaos:
                             <pre><code data-trim class="js" contenteditable>let [value1, value2, value3] = await Promise.all([p1, p2, p3])</code></pre>
                         </li>
+                        <li><code>sleep(x)</code> ≅ <code>await _Promise.delay(x)</code></li>
                     </ul>
                     <p>Blog post at: <a href="http://goo.gl/rG2Tb5">http://goo.gl/rG2Tb5</a></p>
                 </section>
