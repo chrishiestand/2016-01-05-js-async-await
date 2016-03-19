@@ -70,14 +70,22 @@ async function main() {
 // This will fail silently
 main();
 </code></pre>
-                </section>
+</section>
+
+<section>
+    <p>Output</p>
+    <pre><code data-trim class="javascript" contenteditable style="max-height: 700px; max-width: 960px;">
+
+    </code></pre>
+
+</section>
                 <section>
                     <h3>Unhandled Rejection Workaround</h3>
 <pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
 import _Fetch from 'isomorphic-fetch';
 
 // workaround for hidden promise rejections, see:
-// &lt;https://github.com/nodejs/node/issues/830&gt;
+// &lt;https://github.com/nodejs/promises/issues/26&gt;
 process.on('unhandledRejection', err => { throw err; });
 
 // We intentionally are *not* running an http server on port 1337
@@ -101,6 +109,28 @@ main();
 </code></pre>
                 </section>
 
+<section>
+    <p>Output</p>
+    <pre><code data-trim class="hljs text" contenteditable style="max-height: 700px; max-width: 960px;">
+/path/node_modules/core-js/library/modules/es6.promise.js:125
+    if(abrupt)throw abrupt.error;
+              ^
+
+Error: request to http://localhost:1337/servernotrunning.json failed, reason: connect ECONNREFUSED 127.0.0.1:1337
+    at ClientRequest.&lt;anonymous&gt; (/path/node_modules/node-fetch/index.js:117:11)
+    at emitOne (events.js:77:13)
+    at ClientRequest.emit (events.js:169:7)
+    at Socket.socketErrorListener (_http_client.js:256:9)
+    at emitOne (events.js:77:13)
+    at Socket.emit (events.js:169:7)
+    at emitErrorNT (net.js:1255:8)
+    at nextTickCallbackWith2Args (node.js:437:9)
+    at process._tickCallback (node.js:351:17)
+
+    </code></pre>
+
+</section>
+
                 <section>
                     <h3>Async with Promises</h3>
 <pre><code data-trim class="js" contenteditable style="max-height: 700px; max-width: 960px;">
@@ -123,7 +153,9 @@ function main() {
     console.log("shouldn't I have the data here?
     I mean, this code *is* further down the screen.");
 }
-</code></pre></section>
+</code></pre>
+
+</section>
 
                 <section>
                     <h3>Async with async/await</h3>
