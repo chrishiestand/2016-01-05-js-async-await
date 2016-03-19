@@ -266,7 +266,7 @@ async function main() {
                 <section>
                     <h3>Summary</h3>
                     <ul>
-                        <li>Return promises (or use async functions) everywhere you do asynchronous calls</li>
+                        <li>Return promises (or use async functions) everywhere you do non-streaming asynchronous calls</li>
                         <li>Don't forget <code>process.on('unhandledRejection', ...)</code></li>
                         <li>Minimize the number of remote calls per function.</li>
                         <li>For performance, start a promise but defer the <code>await</code> until other work is done.</li>
